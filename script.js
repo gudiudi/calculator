@@ -40,11 +40,12 @@ function parseExpression(exp) {
   const getOperatorsIndex = (arr, operator) => arr.findLastIndex(x => x === operator);
 
   const operators = getOperators(expressionArr);
+  if (operators.length < 1) return null;
   const operatorsIndex = getOperatorsIndex(expressionArr, operators[operators.length - 1]);
 
   const a = expressionArr.slice(0, operatorsIndex);
   const b = expressionArr.slice(operatorsIndex + 1, expressionArr.length);
-  if (b.length <= 0) return null;
+  if (b.length < 1) return null;
 
   return [Number(a.join('')), Number(b.join('')), operators[operators.length - 1]];
 }
@@ -164,8 +165,10 @@ function truncateTo8Decimals(num) {
     if (value === '=') {
       const expression = parseExpression(text);
       if (!expression) return;
+      console.log(expression);
       result = truncateTo8Decimals(calculateExpression(expression));
       if (isNaN(result)) return result = undefined;
+      console.log(result);
       updateDisplayText(result);
     } else if (value === 'DEL') {
       deleteLastEntry(text);
