@@ -66,12 +66,6 @@ function truncateTo8Decimals(num) {
   return Math.trunc(num * 1e8) / 1e8;
 }
 
-/*
-TODO:
-1. Make the result text smaller when the textContent is wider than the display width
-2. BUG: click . and = alternately
-*/
-
 (() => {
   const calculatorButtons = document.querySelector('.calculator-buttons');
   const calculatorDisplayValue = document.querySelector('.calculator-display-value');
@@ -128,8 +122,6 @@ TODO:
       updateDisplayText('');
     }
 
-    console.log(getDisplayText());
-
     // Prevent the user from inputing 0 in front on operand a & b e.g. 02+5, 2+05
     if (
       (text[0] === '0' && value !== '.' && text.length === 1) ||
@@ -137,10 +129,6 @@ TODO:
     ) {
       updateDisplayText(text.slice(0, -1));
     }
-
-    console.log(getDisplayText());
-
-    console.log(text);
 
     updateDisplayText(getDisplayText() + value);
   };
@@ -177,6 +165,7 @@ TODO:
       const expression = parseExpression(text);
       if (!expression) return;
       result = truncateTo8Decimals(calculateExpression(expression));
+      if (isNaN(result)) return result = undefined;
       updateDisplayText(result);
     } else if (value === 'DEL') {
       deleteLastEntry(text);
