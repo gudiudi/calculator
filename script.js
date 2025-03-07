@@ -69,10 +69,7 @@ function truncateTo8Decimals(num) {
 /*
 TODO:
 1. Make the result text smaller when the textContent is wider than the display width
-2. Round the answers with long decimals so that they don’t overflow the display.
-3. Check if displayValue first user input is 0, if it's then the second user input should replace it.
-4. Prevent multiple comma
-5. REFACTOR!!!!!!!!!!
+2. BUG: click . and = alternately
 */
 
 (() => {
@@ -97,11 +94,11 @@ TODO:
       updateDisplayText('0');
     }
 
-    if (result) result = undefined;
+    result = undefined;
   };
 
   const clearExpression = () => {
-    if (result) result = undefined;
+    result = undefined;
     updateDisplayText('0');
   };
 
@@ -121,15 +118,17 @@ TODO:
     }
 
     updateDisplayText(getDisplayText() + value);
-    if (result) result = undefined;
+    result = undefined;
   };
 
   const handleNumericInput = (value, text) => {
     // Pressing a new digit should clear the result and start a new calculation
     if (result !== undefined && !isOperator(value)) {
-      if (result) result = undefined;
+      result = undefined;
       updateDisplayText('');
     }
+
+    console.log(getDisplayText());
 
     // Prevent the user from inputing 0 in front on operand a & b e.g. 02+5, 2+05
     if (
@@ -139,14 +138,18 @@ TODO:
       updateDisplayText(text.slice(0, -1));
     }
 
+    console.log(getDisplayText());
+
+    console.log(text);
+
     updateDisplayText(getDisplayText() + value);
   };
 
   const handleDecimalInput = (value, text, operators) => {
     // Pressing a new digit should clear the result and start a new calculation
     if (result !== undefined && !isOperator(value)) {
-      if (result) result = undefined;
-      updateDisplayText('');
+      result = undefined;
+      updateDisplayText('0');
     }
 
     const expressionArr = text.split('');
