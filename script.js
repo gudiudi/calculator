@@ -37,16 +37,16 @@ function parseExpression(exp) {
   const expressionArr = exp.split('');
   console.log(expressionArr);
 
-  const getOperatorIndex = (arr, operator) => arr.findLastIndex(x => x === operator);
+  const getOperatorsIndex = (arr, operator) => arr.findLastIndex(x => x === operator);
 
-  const operator = getOperator(expressionArr);
-  const operatorIndex = getOperatorIndex(expressionArr, operator[operator.length - 1]);
+  const operators = getOperators(expressionArr);
+  const operatorsIndex = getOperatorsIndex(expressionArr, operators[operators.length - 1]);
 
-  const a = expressionArr.slice(0, operatorIndex);
-  const b = expressionArr.slice(operatorIndex + 1, expressionArr.length);
+  const a = expressionArr.slice(0, operatorsIndex);
+  const b = expressionArr.slice(operatorsIndex + 1, expressionArr.length);
   if (b.length <= 0) return null;
 
-  return [Number(a.join('')), Number(b.join('')), operator[operator.length - 1]];
+  return [Number(a.join('')), Number(b.join('')), operators[operators.length - 1]];
 }
 
 function isOperator(value) {
@@ -54,7 +54,7 @@ function isOperator(value) {
   return operators.includes(value);
 }
 
-function getOperator(arr) {
+function getOperators(arr) {
   return arr.filter(x => isOperator(x));
 }
 
@@ -68,74 +68,101 @@ TODO:
 2. Round the answers with long decimals so that they don’t overflow the display.
 3. Check if displayValue first user input is 0, if it's then the second user input should replace it.
 4. Prevent multiple comma
+5. REFACTOR!!!!!!!!!!
 */
 
 (() => {
   const calculatorButtons = document.querySelector('.calculator-buttons');
   const calculatorDisplayValue = document.querySelector('.calculator-display-value');
-
   let result;
+
+  const updateDisplayText = (value) => calculatorDisplayValue.textContent = value;
+
+  const getDisplayText = () => calculatorDisplayValue.textContent;
+
+  const deleteLastEntry = (text) => {
+    if (
+      text[text.length - 1] !== 0 &&
+      text.length > 1
+    ) {
+      updateDisplayText(text.slice(0, -1));
+    } else if (
+      text[text.length - 1] !== 0 &&
+      text.length === 1
+    ) {
+      updateDisplayText('0');
+    }
+  };
+
+  const clearExpression = () => {
+    result = undefined;
+    updateDisplayText('0');
+  };
+
+  const handleOperatorInput = (value, text, operators) => {
+    if (
+      (operators.length >= 1 && text[0] !== '-' && !isOperator(text[text.length - 1])) ||
+      (operators.length >= 2 && text[0] === '-' && !isOperator(text[text.length - 1]))
+    ) {
+      return;
+    }
+
+    if (
+      isOperator(text[text.length - 1]) ||
+      (text.length === 1 && text === '0' && value === '-')
+    ) {
+      updateDisplayText(text.slice(0, -1));
+    }
+
+    updateDisplayText(getDisplayText() + value);
+    result = undefined;
+  };
+
+  const handleNumericInput = (value, text) => {
+    // Pressing a new digit should clear the result and start a new calculation
+    if (result !== undefined && !isOperator(value)) {
+      result = undefined;
+      updateDisplayText('');
+    }
+
+    // Prevent the user from inputing 0 in front on operand a & b e.g. 02+5, 2+05
+    if (
+      (text[0] === '0' && value !== '.' && text.length === 1) ||
+      (text[text.length - 1] === '0' && value !== '.' && isOperator(text[text.length - 2]))
+    ) {
+      updateDisplayText(text.slice(0, -1));
+    }
+
+    updateDisplayText(getDisplayText() + value);
+  };
+
   calculatorButtons.addEventListener('click', (e) => {
     const target = e.target;
     const value = target.textContent;
+    const text = getDisplayText();
 
-    const operators = getOperator(calculatorDisplayValue.textContent.split(''));
+    const operators = getOperators(text.split(''));
 
     if (value === '=') {
-      const expression = parseExpression(calculatorDisplayValue.textContent);
+      const expression = parseExpression(text);
       if (!expression) return;
       result = calculateExpression(expression);
-      calculatorDisplayValue.textContent = result;
+      updateDisplayText(result);
     } else if (value === 'DEL') {
-      if (
-        calculatorDisplayValue.textContent[calculatorDisplayValue.textContent.length - 1] !== 0 &&
-        calculatorDisplayValue.textContent.length > 1
-      ) {
-        calculatorDisplayValue.textContent = calculatorDisplayValue.textContent.slice(0, -1);
-      }
+      deleteLastEntry(text);
     } else if (value === 'AC') {
-      result = undefined;
-      calculatorDisplayValue.textContent = '0';
+      clearExpression();
     } else if (
-      (isOperator(value) && calculatorDisplayValue.textContent.length > 0 && calculatorDisplayValue.textContent[0] !== '-') || 
-      (isOperator(value) && calculatorDisplayValue.textContent.length > 1 && calculatorDisplayValue.textContent[0] === '-') ||
+      (isOperator(value) && text[0] !== '-') || 
+      (isOperator(value) && text.length > 1 && text[0] === '-') ||
       (isOperator(value) && value === '-')
     ) {
-      if (
-        (operators.length >= 1 && calculatorDisplayValue.textContent[0] !== '-' && !isOperator(calculatorDisplayValue.textContent[calculatorDisplayValue.textContent.length - 1])) ||
-        (operators.length >= 2 && calculatorDisplayValue.textContent[0] === '-' && !isOperator(calculatorDisplayValue.textContent[calculatorDisplayValue.textContent.length - 1]))
-      ) {
-        return;
-      }
-
-      if (
-        isOperator(calculatorDisplayValue.textContent[calculatorDisplayValue.textContent.length - 1]) ||
-        (calculatorDisplayValue.textContent.length === 1 && calculatorDisplayValue.textContent === '0' && value === '-')
-      ) {
-        calculatorDisplayValue.textContent = calculatorDisplayValue.textContent.slice(0, -1);
-      }
-
-      calculatorDisplayValue.textContent += value;
-      result = undefined;
+      handleOperatorInput(value, text, operators);
     } else if (
       isNumeric(value) ||
       value === '.'
     ) {
-      // Pressing a new digit should clear the result and start a new calculation
-      if (result !== undefined && !isOperator(value)) {
-        result = undefined;
-        calculatorDisplayValue.textContent = '';
-      }
-
-      // Prevent the user from inputing 0 in front on operand a & b e.g. 02+5, 2+05
-      if (
-        (calculatorDisplayValue.textContent[0] === '0' && value !== '.' && calculatorDisplayValue.textContent.length === 1) ||
-        (calculatorDisplayValue.textContent[calculatorDisplayValue.textContent.length - 1] === '0' && value !== '.' && isOperator(calculatorDisplayValue.textContent[calculatorDisplayValue.textContent.length - 2]))
-      ) {
-        calculatorDisplayValue.textContent = calculatorDisplayValue.textContent.slice(0, -1);
-      }
-
-      calculatorDisplayValue.textContent += value;
+      handleNumericInput(value, text);
     }
   });
 })();
