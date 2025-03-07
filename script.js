@@ -47,6 +47,15 @@ function parseExpression(exp) {
   return [Number(operandA.join('')), Number(operandB.join('')), operator[0]];
 }
 
+/*
+TODO:
+1. Prevent user from inputing multiple operator
+2. Fix a case when the operand is a negative in parseExpression
+3. Make the result text smaller when the textContent is wider than the display width
+4. Round the answers with long decimals so that they don’t overflow the display.
+5. Prevent the user to divide by 0
+*/
+
 (() => {
   const calculatorButtons = document.querySelector('.calculator-buttons');
   const calculatorDisplayValue = document.querySelector('.calculator-display-value');
@@ -60,6 +69,10 @@ function parseExpression(exp) {
       const result = calculateExpression(operandA, operandB, operator);
       console.log(result);
       calculatorDisplayValue.textContent = result;
+    } else if (value === 'DEL') {
+      calculatorDisplayValue.textContent = calculatorDisplayValue.textContent.slice(0, -1);
+    } else if (value === 'AC') {
+      calculatorDisplayValue.textContent = '';
     } else {
       calculatorDisplayValue.textContent += value;
     }
