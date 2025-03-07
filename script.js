@@ -37,7 +37,7 @@ function isNumeric(value) {
     if (
       isNumeric(value) || 
       (value === '.' && !calculatorDisplayValue.textContent.includes('.')) ||
-      (value === '-' && a[0] !== '-')
+      (value === '-' && a[0] !== '-' && a.length === 0)
     ) {
       a += value;
       calculatorDisplayValue.textContent = a;
