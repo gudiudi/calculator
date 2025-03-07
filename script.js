@@ -11,6 +11,7 @@ function multiply(a, b) {
 }
 
 function divide(a, b) {
+  if (b === 0) return 0;
   return a / b;
 }
 
@@ -18,7 +19,9 @@ function modulus(a, b) {
   return a % b;
 }
 
-function calculateExpression(a, b, operator) {
+function calculateExpression(exp) {
+  const [a, b, operator] = exp;
+
   const operations = {
     '+': add,
     '-': subtract,
@@ -32,48 +35,106 @@ function calculateExpression(a, b, operator) {
 
 function parseExpression(exp) {
   const expressionArr = exp.split('');
+  console.log(expressionArr);
 
-  const operators =  ['+', '-', '*', '/', '%'];
-  const isOperator = (x) => operators.includes(x);
-  const getOperator = (arr) => arr.filter(x => isOperator(x));
-  const getOperatorIndex = (arr, operator) => arr.findIndex(x => x === operator);
+  const getOperatorIndex = (arr, operator) => arr.findLastIndex(x => x === operator);
 
   const operator = getOperator(expressionArr);
-  const operatorIndex = getOperatorIndex(expressionArr, operator[0]);
+  const operatorIndex = getOperatorIndex(expressionArr, operator[operator.length - 1]);
 
-  const operandA = expressionArr.slice(0, operatorIndex);
-  const operandB = expressionArr.slice(operatorIndex + 1, expressionArr.length);
+  const a = expressionArr.slice(0, operatorIndex);
+  const b = expressionArr.slice(operatorIndex + 1, expressionArr.length);
+  if (b.length <= 0) return null;
 
-  return [Number(operandA.join('')), Number(operandB.join('')), operator[0]];
+  return [Number(a.join('')), Number(b.join('')), operator[operator.length - 1]];
+}
+
+function isOperator(value) {
+  const operators =  ['+', '-', '*', '/', '%'];
+  return operators.includes(value);
+}
+
+function getOperator(arr) {
+  return arr.filter(x => isOperator(x));
+}
+
+function isNumeric(value) {
+  return !isNaN(value) && !isNaN(parseFloat(value))
 }
 
 /*
 TODO:
-1. Prevent user from inputing multiple operator
-2. Fix a case when the operand is a negative in parseExpression
-3. Make the result text smaller when the textContent is wider than the display width
-4. Round the answers with long decimals so that they don’t overflow the display.
-5. Prevent the user to divide by 0
+1. Make the result text smaller when the textContent is wider than the display width
+2. Round the answers with long decimals so that they don’t overflow the display.
+3. Check if displayValue first user input is 0, if it's then the second user input should replace it.
+4. Prevent multiple comma
 */
 
 (() => {
   const calculatorButtons = document.querySelector('.calculator-buttons');
   const calculatorDisplayValue = document.querySelector('.calculator-display-value');
 
+  let result;
   calculatorButtons.addEventListener('click', (e) => {
     const target = e.target;
     const value = target.textContent;
 
+    const operators = getOperator(calculatorDisplayValue.textContent.split(''));
+
     if (value === '=') {
-      const [operandA, operandB, operator] = parseExpression(calculatorDisplayValue.textContent);
-      const result = calculateExpression(operandA, operandB, operator);
-      console.log(result);
+      const expression = parseExpression(calculatorDisplayValue.textContent);
+      if (!expression) return;
+      result = calculateExpression(expression);
       calculatorDisplayValue.textContent = result;
     } else if (value === 'DEL') {
-      calculatorDisplayValue.textContent = calculatorDisplayValue.textContent.slice(0, -1);
+      if (
+        calculatorDisplayValue.textContent[calculatorDisplayValue.textContent.length - 1] !== 0 &&
+        calculatorDisplayValue.textContent.length > 1
+      ) {
+        calculatorDisplayValue.textContent = calculatorDisplayValue.textContent.slice(0, -1);
+      }
     } else if (value === 'AC') {
-      calculatorDisplayValue.textContent = '';
-    } else {
+      result = undefined;
+      calculatorDisplayValue.textContent = '0';
+    } else if (
+      (isOperator(value) && calculatorDisplayValue.textContent.length > 0 && calculatorDisplayValue.textContent[0] !== '-') || 
+      (isOperator(value) && calculatorDisplayValue.textContent.length > 1 && calculatorDisplayValue.textContent[0] === '-') ||
+      (isOperator(value) && value === '-')
+    ) {
+      if (
+        (operators.length >= 1 && calculatorDisplayValue.textContent[0] !== '-' && !isOperator(calculatorDisplayValue.textContent[calculatorDisplayValue.textContent.length - 1])) ||
+        (operators.length >= 2 && calculatorDisplayValue.textContent[0] === '-' && !isOperator(calculatorDisplayValue.textContent[calculatorDisplayValue.textContent.length - 1]))
+      ) {
+        return;
+      }
+
+      if (
+        isOperator(calculatorDisplayValue.textContent[calculatorDisplayValue.textContent.length - 1]) ||
+        (calculatorDisplayValue.textContent.length === 1 && calculatorDisplayValue.textContent === '0' && value === '-')
+      ) {
+        calculatorDisplayValue.textContent = calculatorDisplayValue.textContent.slice(0, -1);
+      }
+
+      calculatorDisplayValue.textContent += value;
+      result = undefined;
+    } else if (
+      isNumeric(value) ||
+      value === '.'
+    ) {
+      // Pressing a new digit should clear the result and start a new calculation
+      if (result !== undefined && !isOperator(value)) {
+        result = undefined;
+        calculatorDisplayValue.textContent = '';
+      }
+
+      // Prevent the user from inputing 0 in front on operand a & b e.g. 02+5, 2+05
+      if (
+        (calculatorDisplayValue.textContent[0] === '0' && value !== '.' && calculatorDisplayValue.textContent.length === 1) ||
+        (calculatorDisplayValue.textContent[calculatorDisplayValue.textContent.length - 1] === '0' && value !== '.' && isOperator(calculatorDisplayValue.textContent[calculatorDisplayValue.textContent.length - 2]))
+      ) {
+        calculatorDisplayValue.textContent = calculatorDisplayValue.textContent.slice(0, -1);
+      }
+
       calculatorDisplayValue.textContent += value;
     }
   });
