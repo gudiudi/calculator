@@ -62,6 +62,10 @@ function isNumeric(value) {
   return !isNaN(value) && !isNaN(parseFloat(value))
 }
 
+function truncateTo8Decimals(num) {
+  return Math.trunc(num * 1e8) / 1e8;
+}
+
 /*
 TODO:
 1. Make the result text smaller when the textContent is wider than the display width
@@ -92,14 +96,16 @@ TODO:
     ) {
       updateDisplayText('0');
     }
+
+    if (result) result = undefined;
   };
 
   const clearExpression = () => {
-    result = undefined;
+    if (result) result = undefined;
     updateDisplayText('0');
   };
 
-  const handleOperatorInput = (value, text, operators) => {
+  const handleOperatorInput = async (value, text, operators) => {
     if (
       (operators.length >= 1 && text[0] !== '-' && !isOperator(text[text.length - 1])) ||
       (operators.length >= 2 && text[0] === '-' && !isOperator(text[text.length - 1]))
@@ -115,13 +121,13 @@ TODO:
     }
 
     updateDisplayText(getDisplayText() + value);
-    result = undefined;
+    if (result) result = undefined;
   };
 
   const handleNumericInput = (value, text) => {
     // Pressing a new digit should clear the result and start a new calculation
     if (result !== undefined && !isOperator(value)) {
-      result = undefined;
+      if (result) result = undefined;
       updateDisplayText('');
     }
 
@@ -136,6 +142,27 @@ TODO:
     updateDisplayText(getDisplayText() + value);
   };
 
+  const handleDecimalInput = (value, text, operators) => {
+    // Pressing a new digit should clear the result and start a new calculation
+    if (result !== undefined && !isOperator(value)) {
+      if (result) result = undefined;
+      updateDisplayText('');
+    }
+
+    const expressionArr = text.split('');
+    const getOperatorsIndex = (arr, operator) => arr.findLastIndex(x => x === operator);
+    const operatorsIndex = getOperatorsIndex(expressionArr, operators[operators.length - 1]);
+
+    const b = expressionArr.slice(operatorsIndex + 1, expressionArr.length);
+
+    if (
+      operators.length === 0 && !text.includes('.') && text.length > 0 ||
+      operators.length >= 1 && b.length >= 0 && !b.includes('.')
+    ) {
+      updateDisplayText(getDisplayText() + value);
+    }
+  };
+
   calculatorButtons.addEventListener('click', (e) => {
     const target = e.target;
     const value = target.textContent;
@@ -146,7 +173,7 @@ TODO:
     if (value === '=') {
       const expression = parseExpression(text);
       if (!expression) return;
-      result = calculateExpression(expression);
+      result = truncateTo8Decimals(calculateExpression(expression));
       updateDisplayText(result);
     } else if (value === 'DEL') {
       deleteLastEntry(text);
@@ -158,11 +185,10 @@ TODO:
       (isOperator(value) && value === '-')
     ) {
       handleOperatorInput(value, text, operators);
-    } else if (
-      isNumeric(value) ||
-      value === '.'
-    ) {
+    } else if (isNumeric(value)) {
       handleNumericInput(value, text);
+    } else if (value === '.') {
+      handleDecimalInput(value, text, operators);
     }
   });
 })();
